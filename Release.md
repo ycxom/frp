@@ -1,9 +1,9 @@
 ## Features
 
-* Expanded the frps dashboard API v2 migration across Clients, Proxies, Server Overview, Client Detail, and Proxy Detail, covering paginated users/clients/proxies, detail data, proxy traffic history, server system info, offline proxy statistics pruning, server-side pagination, search, and proxy type filtering.
+* UDP packet payloads for ordinary UDP proxies and SUDP now use a dedicated binary codec when frpc and frps successfully negotiate the capability under wire protocol v2, using a more compact wire representation. Wire protocol v1 remains JSON; wire protocol v2 falls back to JSON `UDPPacket` when the peer does not support or did not negotiate the capability.
 
 ## Fixes
 
-* WebSocket and WSS tunnel payloads are now sent as binary frames, avoiding disconnects through RFC-compliant intermediaries that validate text frames as UTF-8.
-* The `tls2raw` client plugin now writes the proxy protocol header to the local raw connection when proxy protocol is enabled.
-* frpc now rejects duplicate proxy and visitor names in config files instead of silently overwriting earlier entries.
+* Fixed a server panic and remote denial of service caused by a client sending a negative `pool_count`. Negative values are now rejected before work-connection pool resources are allocated.
+* Fixed `frpc verify` ignoring configured `featureGates`, which caused VirtualNet configurations to be rejected even when the feature was enabled.
+* Fixed a case-insensitive validation bypass that allowed `customDomains` under the configured `subDomainHost` to be registered using mixed-case domain names.
