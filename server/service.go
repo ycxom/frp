@@ -287,9 +287,28 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 	}
 
 	// Listen for accepting connections from client using websocket protocol.
-	websocketPrefix := []byte("GET " + netpkg.FrpWebsocketPath)
-	websocketLn := svr.muxer.Listen(0, uint32(len(websocketPrefix)), func(data []byte) bool {
-		return bytes.Equal(data, websocketPrefix)
+	// Accept the default path and, if configured, a custom path. The client may
+	// also use a randomized path, so match on the "GET <path> " prefix (the
+	// trailing space is the request-line separator) rather than an exact byte
+	// comparison.
+	websocketPaths := []string{netpkg.FrpWebsocketPath}
+	if cfg.Transport.WebsocketPath != "" && cfg.Transport.WebsocketPath != netpkg.FrpWebsocketPath {
+		websocketPaths = append(websocketPaths, cfg.Transport.WebsocketPath)
+	}
+	maxWsPrefixLen := 0
+	for _, p := range websocketPaths {
+		if l := len("GET " + p); l > maxWsPrefixLen {
+			maxWsPrefixLen = l
+		}
+	}
+	websocketLn := svr.muxer.Listen(0, uint32(maxWsPrefixLen+1), func(data []byte) bool {
+		for _, p := range websocketPaths {
+			prefix := "GET " + p
+			if len(data) >= len(prefix)+1 && bytes.HasPrefix(data, []byte(prefix)) && data[len(prefix)] == ' ' {
+				return true
+			}
+		}
+		return false
 	})
 	svr.websocketListener = netpkg.NewWebsocketListener(websocketLn)
 

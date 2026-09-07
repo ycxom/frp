@@ -39,6 +39,8 @@ require (
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 )
 
+replace github.com/quic-go/quic-go => ./third_party/quic-go
+
 require (
 	github.com/Azure/go-ntlmssp v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect

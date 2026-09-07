@@ -18,6 +18,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/fatedier/frp/pkg/config/types"
+	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/util"
 )
 
@@ -177,6 +178,13 @@ type ServerTransportConfig struct {
 	QUIC QUICOptions `json:"quic,omitempty"`
 	// TLS specifies TLS settings for the connection from the client.
 	TLS TLSServerConfig `json:"tls,omitempty"`
+	// WebsocketPath specifies the request path that the server accepts for
+	// WebSocket connections from clients. By default, this value is "/~!frp".
+	// Set a custom path to match a client configured with a custom
+	// transport.websocketPath (or a randomized path). The default "/~!frp" is
+	// always accepted as a fallback, so clients using the default path keep
+	// working regardless of this setting.
+	WebsocketPath string `json:"websocketPath,omitempty"`
 }
 
 func (c *ServerTransportConfig) Complete() {
@@ -191,6 +199,7 @@ func (c *ServerTransportConfig) Complete() {
 		c.HeartbeatTimeout = util.EmptyOr(c.HeartbeatTimeout, 90)
 	}
 	c.QUIC.Complete()
+	c.WebsocketPath = util.EmptyOr(c.WebsocketPath, netpkg.FrpWebsocketPath)
 	if c.TLS.TrustedCaFile != "" {
 		c.TLS.Force = true
 	}

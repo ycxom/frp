@@ -15,6 +15,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -170,6 +171,9 @@ func validateTransportConfig(c *v1.ClientTransportConfig) (Warning, error) {
 	}
 	if !slices.Contains(SupportedWireProtocols, c.WireProtocol) {
 		errs = AppendError(errs, fmt.Errorf("invalid transport.wireProtocol, optional values are %v", SupportedWireProtocols))
+	}
+	if fingerprint := c.QUICTLSFingerprint; fingerprint != "" && fingerprint != "chrome" {
+		errs = AppendError(errs, errors.New(`unsupported transport.quicTLSFingerprint, optional values are "", "chrome"`))
 	}
 	return warnings, errs
 }

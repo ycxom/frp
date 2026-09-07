@@ -1,0 +1,24 @@
+bindAddr = "0.0.0.0"
+bindPort = 7000
+
+# QUIC 通过 UDP 监听；端口号可以与 TCP bindPort 相同。
+quicBindPort = 7000
+
+# 生产环境在主机允许绑定特权端口时，优先使用 UDP/443：
+# bindPort = 443
+# quicBindPort = 443
+
+auth.method = "token"
+auth.token = "change-me"
+
+# 使用正式证书可减少自签证书特征，并允许 frpc 校验服务端身份。
+# trustedCaFile 同时会启用强制的客户端证书校验。
+# transport.tls.certFile = "server.crt"
+# transport.tls.keyFile = "server.key"
+# transport.tls.trustedCaFile = "client-ca.crt"
+
+# 非 QUIC 监听也仅接受 TLS 连接。
+# transport.tls.force = true
+
+log.to = "console"
+log.level = "info"

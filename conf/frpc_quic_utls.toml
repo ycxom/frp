@@ -1,0 +1,33 @@
+serverAddr = "127.0.0.1"
+serverPort = 7000
+
+# 生产环境建议使用域名而不是 IP，并确保 serverAddr 与证书 SAN 一致；
+# 也可以通过 transport.tls.serverName 显式指定校验用的服务器名。
+# serverAddr = "frps.example.com"
+# serverPort = 443
+
+auth.method = "token"
+auth.token = "change-me"
+
+log.to = "console"
+log.level = "info"
+
+transport.protocol = "quic"
+transport.quicTLSFingerprint = "chrome"
+
+# 生产加固：校验服务端证书。未配置 trustedCaFile 时，frp 对自动生成的
+# 自签服务端证书会使用 InsecureSkipVerify。
+transport.tls.enable = true
+# transport.tls.serverName = "frps.example.com"
+# transport.tls.trustedCaFile = "ca.crt"
+
+# 与 frps 的 transport.tls.trustedCaFile 一起启用，可开启双向 TLS。
+# transport.tls.certFile = "client.crt"
+# transport.tls.keyFile = "client.key"
+
+[[proxies]]
+name = "test-tcp-quic-utls"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 6000

@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"math"
 	"net"
 	"strconv"
@@ -27,6 +28,7 @@ import (
 	libnet "github.com/fatedier/golib/net"
 	fmux "github.com/fatedier/yamux"
 	quic "github.com/quic-go/quic-go"
+	utls "github.com/refraction-networking/utls"
 	"github.com/samber/lo"
 
 	v1 "github.com/fatedier/frp/pkg/config/v1"
@@ -124,6 +126,16 @@ func (c *defaultConnectorImpl) Open() error {
 		}
 		tlsConfig.NextProtos = []string{"h2"}
 
+		switch strings.ToLower(strings.TrimSpace(c.cfg.Transport.QUICTLSFingerprint)) {
+		case "":
+		case "chrome":
+			quic.SetClientQUICConnFactory(func(tlsConf *tls.Config, enableSessionEvents bool) quic.QUICConn {
+				return transport.NewUTLSQUICConn(tlsConf, utls.HelloChrome_Auto)
+			})
+		default:
+			return fmt.Errorf("unsupported QUIC TLS fingerprint: %q", c.cfg.Transport.QUICTLSFingerprint)
+		}
+
 		conn, err := quic.DialAddr(
 			c.ctx,
 			net.JoinHostPort(c.cfg.ServerAddr, strconv.Itoa(c.cfg.ServerPort)),
@@ -213,10 +225,17 @@ func (c *defaultConnectorImpl) realConnect() (net.Conn, error) {
 	}
 	dialOptions := []libnet.DialOption{}
 	protocol := c.cfg.Transport.Protocol
+	// Resolve the WebSocket request path. When randomization is enabled, pick a
+	// fresh browser-like path per connection so the path is not a fixed,
+	// fingerprintable constant.
+	wsPath := c.cfg.Transport.WebsocketPath
+	if c.cfg.Transport.WebsocketPathRandom {
+		wsPath = netpkg.RandomWebsocketPath()
+	}
 	switch protocol {
 	case "websocket":
 		protocol = "tcp"
-		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{Hook: netpkg.DialHookWebsocket(protocol, "")}))
+		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{Hook: netpkg.DialHookWebsocket(protocol, "", wsPath)}))
 		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{
 			Hook: netpkg.DialHookCustomTLSHeadByte(tlsConfig != nil, lo.FromPtr(c.cfg.Transport.TLS.DisableCustomTLSFirstByte)),
 		}))
@@ -231,7 +250,7 @@ func (c *defaultConnectorImpl) realConnect() (net.Conn, error) {
 			Hook:     transport.DialHookUTLS(tlsConfig),
 		}))
 		// Make sure that if it is wss, the websocket hook is executed after the tls hook.
-		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{Hook: netpkg.DialHookWebsocket(protocol, tlsConfig.ServerName), Priority: 110}))
+		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{Hook: netpkg.DialHookWebsocket(protocol, tlsConfig.ServerName, wsPath), Priority: 110}))
 	default:
 		dialOptions = append(dialOptions, libnet.WithAfterHook(libnet.AfterHook{
 			Hook: netpkg.DialHookCustomTLSHeadByte(tlsConfig != nil, lo.FromPtr(c.cfg.Transport.TLS.DisableCustomTLSFirstByte)),

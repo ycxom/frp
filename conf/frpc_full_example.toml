@@ -103,6 +103,18 @@ transport.poolCount = 5
 # supports tcp, kcp, quic, websocket and wss now, default is tcp
 transport.protocol = "tcp"
 
+# Request path used for the WebSocket upgrade when protocol is "websocket" or
+# "wss". Default is "/~!frp". Set a custom path (and a matching
+# transport.websocketPath on the server) to avoid the fixed, easily-recognized
+# default path when evading WAF path analysis.
+# transport.websocketPath = "/~!frp"
+
+# When true, the client picks a random browser-like WebSocket path for each
+# connection instead of using transport.websocketPath. The server must be
+# configured with a matching transport.websocketPath (the default "/~!frp" is
+# always accepted as a fallback). Only applies to "websocket"/"wss".
+# transport.websocketPathRandom = false
+
 # FRP wire protocol used inside the selected transport.
 # supports v1 and v2, default is v1. v2 requires frps support and must be enabled explicitly.
 # transport.wireProtocol = "v1"
@@ -121,6 +133,10 @@ transport.connectServerLocalIP = "0.0.0.0"
 # transport.quic.keepalivePeriod = 10
 # transport.quic.maxIdleTimeout = 30
 # transport.quic.maxIncomingStreams = 100000
+
+# QUIC 传输使用的 TLS ClientHello 指纹。空值使用 Go 标准 crypto/tls 实现；
+# "chrome" 使用 uTLS 当前 Chrome 指纹。仅 protocol = "quic" 支持该选项。
+# transport.quicTLSFingerprint = ""
 
 # If tls.enable is true, frpc will connect frps by tls.
 # Since v0.50.0, the default value has been changed to true, and tls is enabled by default.

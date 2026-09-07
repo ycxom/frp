@@ -30,6 +30,8 @@ func toUTLSConfig(cfg *tls.Config) *utls.Config {
 		InsecureSkipVerify: cfg.InsecureSkipVerify,
 		RootCAs:            cfg.RootCAs,
 		NextProtos:         cfg.NextProtos,
+		MinVersion:         cfg.MinVersion,
+		MaxVersion:         cfg.MaxVersion,
 	}
 }
 

@@ -34,6 +34,10 @@ func TestClientConfigComplete(t *testing.T) {
 	require.Equal(true, lo.FromPtr(c.Transport.TLS.Enable))
 	require.Equal(true, lo.FromPtr(c.Transport.TLS.DisableCustomTLSFirstByte))
 	require.NotEmpty(c.NatHoleSTUNServer)
+
+	c.Transport.QUICTLSFingerprint = "  CHROME  "
+	require.NoError(c.Complete())
+	require.Equal("chrome", c.Transport.QUICTLSFingerprint)
 }
 
 func TestAuthClientConfig_Complete(t *testing.T) {

@@ -19,6 +19,7 @@ test/bin/
 vendor/
 lastversion/
 .cache/
+.tmp-e2e/
 dist/
 .idea/
 .vscode/

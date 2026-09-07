@@ -40,6 +40,12 @@ transport.maxPoolCount = 5
 # If negative, keep-alive probes are disabled.
 # transport.tcpKeepalive = 7200
 
+# Request path that the server accepts for WebSocket connections from clients.
+# Default is "/~!frp". Set a custom path to match a client configured with a
+# custom transport.websocketPath (or a randomized path). The default "/~!frp"
+# is always accepted as a fallback.
+# transport.websocketPath = "/~!frp"
+
 # transport.tls.force specifies whether to only accept TLS-encrypted connections. By default, the value is false.
 transport.tls.force = false
 

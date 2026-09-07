@@ -16,9 +16,11 @@ package v1
 
 import (
 	"os"
+	"strings"
 
 	"github.com/samber/lo"
 
+	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/util"
 )
 
@@ -132,6 +134,10 @@ type ClientTransportConfig struct {
 	TCPMuxKeepaliveInterval int64 `json:"tcpMuxKeepaliveInterval,omitempty"`
 	// QUIC protocol options.
 	QUIC QUICOptions `json:"quic,omitempty"`
+	// QUICTLSFingerprint 控制 QUIC 传输使用的 TLS ClientHello。默认空值
+	// 使用 Go 标准 crypto/tls 实现；设置为 "chrome" 时使用 uTLS 当前
+	// Chrome 指纹。
+	QUICTLSFingerprint string `json:"quicTLSFingerprint,omitempty" toml:"quicTLSFingerprint"`
 	// HeartBeatInterval specifies at what interval heartbeats are sent to the
 	// server, in seconds. It is not recommended to change this value. By
 	// default, this value is 30. Set negative value to disable it.
@@ -142,6 +148,19 @@ type ClientTransportConfig struct {
 	HeartbeatTimeout int64 `json:"heartbeatTimeout,omitempty"`
 	// TLS specifies TLS settings for the connection to the server.
 	TLS TLSClientConfig `json:"tls,omitempty"`
+	// WebsocketPath specifies the request path used for the WebSocket upgrade
+	// when protocol is "websocket" or "wss". By default, this value is "/~!frp".
+	// Set a custom path (or enable WebsocketPathRandom) to avoid the fixed,
+	// easily-recognized default path when evading WAF path analysis. The server
+	// must be configured with a matching transport.websocketPath.
+	WebsocketPath string `json:"websocketPath,omitempty"`
+	// WebsocketPathRandom, when true, makes the client pick a random
+	// browser-like WebSocket path for each connection instead of using
+	// WebsocketPath. This further reduces the chance of the path being
+	// fingerprinted. The server must be configured with a matching
+	// transport.websocketPath (the default "/~!frp" is always accepted as a
+	// fallback). Only applies when protocol is "websocket" or "wss".
+	WebsocketPathRandom bool `json:"websocketPathRandom,omitempty"`
 }
 
 func (c *ClientTransportConfig) Complete() {
@@ -163,6 +182,8 @@ func (c *ClientTransportConfig) Complete() {
 	}
 	c.QUIC.Complete()
 	c.TLS.Complete()
+	c.WebsocketPath = util.EmptyOr(c.WebsocketPath, netpkg.FrpWebsocketPath)
+	c.QUICTLSFingerprint = strings.ToLower(strings.TrimSpace(c.QUICTLSFingerprint))
 }
 
 type TLSClientConfig struct {

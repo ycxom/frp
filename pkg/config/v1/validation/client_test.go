@@ -81,6 +81,48 @@ func TestValidateClientFeatureGates(t *testing.T) {
 	}
 }
 
+func TestValidateClientQUICTLSFingerprint(t *testing.T) {
+	tests := []struct {
+		name        string
+		fingerprint string
+		wantErr     string
+	}{
+		{
+			name:        "default Go TLS",
+			fingerprint: "",
+		},
+		{
+			name:        "normalized Chrome fingerprint",
+			fingerprint: " CHROME ",
+		},
+		{
+			name:        "unsupported fingerprint",
+			fingerprint: "firefox",
+			wantErr:     `unsupported transport.quicTLSFingerprint`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &v1.ClientCommonConfig{
+				Log: v1.LogConfig{Level: "info"},
+				Transport: v1.ClientTransportConfig{
+					Protocol:           "quic",
+					WireProtocol:       "v2",
+					QUICTLSFingerprint: tc.fingerprint,
+				},
+			}
+			require.NoError(t, cfg.Complete())
+			_, err := NewConfigValidator(security.NewUnsafeFeatures(nil)).ValidateClientCommonConfig(cfg)
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
+}
+
 func TestGetClientConfigRequirements(t *testing.T) {
 	virtualNetProxy := &v1.STCPProxyConfig{
 		ProxyBaseConfig: v1.ProxyBaseConfig{
